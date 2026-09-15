@@ -1,949 +1,487 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>2048</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rotundus 2048</title>
   <style>
+    :root {
+      --paper: #faf8ef;
+      --ink: #3d372f;
+      --muted: #776e65;
+      --board: #bbada0;
+      --empty: #cdc1b4;
+      --button: #8f7a66;
+    }
+
+    * { box-sizing: border-box; }
+
     body {
-      background: #faf8ef;
-      color: #776e65;
-      font-family: "Clear Sans", "Helvetica Neue", Arial, sans-serif;
-      font-size: 18px;
+      margin: 0;
+      background: var(--paper);
+      color: var(--muted);
+      font-family: Arial, Helvetica, sans-serif;
+      min-height: 100vh;
     }
 
-    .container {
-      width: 90%;
-      max-width: 500px;
+    .app {
+      width: min(94vw, 680px);
       margin: 0 auto;
+      padding: 20px 0 30px;
     }
 
-    @media screen and (max-width: 520px) {
-      h1 {
-        font-size: 40px;
-      }
-      .scores-container {
-        float: none;
-        margin-bottom: 10px;
-      }
-      .game-container {
-        width: 100%;
-        height: auto;
-        padding-bottom: 100%;
-      }
-      .grid-cell, .tile {
-        width: 21%;
-        height: 21%;
-        margin-right: 4%;
-        font-size: 35px;
-      }
-      .tile {
-        line-height: 100%;
-      }
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 14px;
+      margin-bottom: 14px;
     }
 
     h1 {
-      font-size: 80px;
-      font-weight: bold;
       margin: 0;
-      display: block;
-      float: left;
+      color: var(--ink);
+      font-size: clamp(42px, 10vw, 72px);
+      line-height: 0.95;
     }
 
-    .heading:after {
-      content: "";
-      display: block;
-      clear: both;
-    }
+    .scores { display: flex; gap: 8px; }
 
-    .scores-container {
-      float: right;
-    }
-
-    .score-container, .best-container {
-      position: relative;
-      display: inline-block;
-      background: #bbada0;
-      padding: 15px 25px;
-      font-size: 25px;
-      height: 25px;
-      line-height: 47px;
-      font-weight: bold;
-      border-radius: 3px;
-      color: white;
-      margin-top: 8px;
-      text-align: center;
-    }
-
-    .score-container:after, .best-container:after {
-      content: "Score";
-      position: absolute;
-      width: 100%;
-      top: -15px;
-      left: 0;
-      text-transform: uppercase;
-      font-size: 13px;
-      line-height: 13px;
-      text-align: center;
-      color: #eee4da;
-    }
-
-    .best-container:after {
-      content: "Best";
-    }
-
-    .game-container {
-      margin-top: 40px;
-      position: relative;
-      background: #bbada0;
+    .score-box {
+      min-width: 78px;
       border-radius: 6px;
-      width: 500px;
-      height: 500px;
-      -webkit-box-sizing: border-box;
-      -moz-box-sizing: border-box;
-      box-sizing: border-box;
-      padding: 5px;
-    }
-
-    .grid-container {
-      position: absolute;
-      z-index: 1;
-    }
-
-    .grid-row {
-      margin-bottom: 15px;
-    }
-
-    .grid-row:last-child {
-      margin-bottom: 0;
-    }
-
-    .tile {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      width: 106.25px;
-      height: 106.25px;
-      line-height: 106.25px;
-      text-align: center;
-      font-weight: bold;
-      border-radius: 3px;
-      font-size: 55px;
-      transition: all 0.1s ease-in-out;
-    }
-
-    .grid-row:after {
-      content: "";
-      display: block;
-      clear: both;
-    }
-
-    .grid-cell {
-      width: 106.25px;
-      height: 106.25px;
-      margin-right: 15px;
-      float: left;
-      border-radius: 3px;
-      background: rgba(238, 228, 218, 0.35);
-    }
-
-    .grid-cell:last-child {
-      margin-right: 0;
-    }
-
-    .tile-container {
-      position: absolute;
-      z-index: 2;
-    }
-
-    .tile.tile-2 {
-      background: #eee4da;
-      color: #776e65;
-    }
-
-    .tile.tile-4 {
-      background: #ede0c8;
-      color: #776e65;
-    }
-
-    .tile.tile-8 {
-      background: #f2b179;
-      color: #f9f6f2;
-    }
-
-    .tile.tile-16 {
-      background: #f59563;
-      color: #f9f6f2;
-    }
-
-    .tile.tile-32 {
-      background: #f67c5f;
-      color: #f9f6f2;
-    }
-
-    .tile.tile-64 {
-      background: #f65e3b;
-      color: #f9f6f2;
-    }
-
-    .tile.tile-128 {
-      background: #edcf72;
-      color: #f9f6f2;
-      font-size: 45px;
-    }
-
-    .tile.tile-256 {
-      background: #edcc61;
-      color: #f9f6f2;
-      font-size: 45px;
-    }
-
-    .tile.tile-512 {
-      background: #edc850;
-      color: #f9f6f2;
-      font-size: 45px;
-    }
-
-    .tile.tile-1024 {
-      background: #edc53f;
-      color: #f9f6f2;
-      font-size: 35px;
-    }
-
-    .marker {
-      width: 20px;
-      height: 20px;
-      background-color: #fff;
-      border-radius: 50%;
-      position: absolute;
-      top: 10px;
-    }
-
-    .spinning-wheel-container {
-      margin-top: 40px;
-      position: relative;
-      width: 400px;
-      height: 400px;
-      margin-left: auto;
-      margin-right: auto;
-    }
-
-    .wheel-layer {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      border-radius: 50%;
-      transition: transform 0.5s ease-out;
-      clip-path: circle(50% at 50% 50%);
-    }
-
-    .layer-1 {
-      background: conic-gradient(
-        #f2b179 0deg 51.4deg,
-        #f59563 51.4deg 102.8deg,
-        #f67c5f 102.8deg 154.2deg,
-        #f65e3b 154.2deg 205.6deg,
-        #edcf72 205.6deg 257deg,
-        #edcc61 257deg 308.4deg,
-        #edc850 308.4deg 360deg
-      );
-    }
-
-    .layer-2 {
-      width: 75%;
-      height: 75%;
-      top: 12.5%;
-      left: 12.5%;
-      background: conic-gradient(
-        #f67c5f 0deg 72deg,
-        #f65e3b 72deg 144deg,
-        #edcf72 144deg 216deg,
-        #edcc61 216deg 288deg,
-        #edc850 288deg 360deg
-      );
-    }
-
-    .layer-3 {
-      width: 50%;
-      height: 50%;
-      top: 25%;
-      left: 25%;
-      background: conic-gradient(
-        #edcf72 0deg 120deg,
-        #edcc61 120deg 240deg,
-        #edc850 240deg 360deg
-      );
-    }
-
-    .layer-4 {
-      width: 25%;
-      height: 25%;
-      top: 37.5%;
-      left: 37.5%;
-      background: #edc53f;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 35px;
-      color: #f9f6f2;
-    }
-
-    .label {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform-origin: 0 0;
+      background: var(--board);
       color: white;
-      font-size: 20px;
-      font-weight: bold;
+      padding: 8px 10px;
+      text-align: center;
+      font-weight: 700;
     }
 
-    .layer-1 .label:nth-child(2) { transform: rotate(25.7deg) translate(150px) rotate(90deg) translate(-50%, -50%); }
-    .layer-1 .label:nth-child(3) { transform: rotate(77.1deg) translate(150px) rotate(90deg) translate(-50%, -50%); }
-    .layer-1 .label:nth-child(4) { transform: rotate(128.5deg) translate(150px) rotate(90deg) translate(-50%, -50%); }
-    .layer-1 .label:nth-child(5) { transform: rotate(179.9deg) translate(150px) rotate(90deg) translate(-50%, -50%); }
-    .layer-1 .label:nth-child(6) { transform: rotate(231.3deg) translate(150px) rotate(90deg) translate(-50%, -50%); }
-    .layer-1 .label:nth-child(7) { transform: rotate(282.7deg) translate(150px) rotate(90deg) translate(-50%, -50%); }
-    .layer-1 .label:nth-child(8) { transform: rotate(334.1deg) translate(150px) rotate(90deg) translate(-50%, -50%); }
+    .score-box span {
+      display: block;
+      color: #eee4da;
+      font-size: 12px;
+      text-transform: uppercase;
+    }
 
-    .layer-2 .label:nth-child(2) { transform: rotate(36deg) translate(110px) rotate(90deg) translate(-50%, -50%); }
-    .layer-2 .label:nth-child(3) { transform: rotate(108deg) translate(110px) rotate(90deg) translate(-50%, -50%); }
-    .layer-2 .label:nth-child(4) { transform: rotate(180deg) translate(110px) rotate(90deg) translate(-50%, -50%); }
-    .layer-2 .label:nth-child(5) { transform: rotate(252deg) translate(110px) rotate(90deg) translate(-50%, -50%); }
-    .layer-2 .label:nth-child(6) { transform: rotate(324deg) translate(110px) rotate(90deg) translate(-50%, -50%); }
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      margin: 12px 0 16px;
+    }
 
-    .layer-3 .label:nth-child(2) { transform: rotate(60deg) translate(70px) rotate(90deg) translate(-50%, -50%); }
-    .layer-3 .label:nth-child(3) { transform: rotate(180deg) translate(70px) rotate(90deg) translate(-50%, -50%); }
-    .layer-3 .label:nth-child(4) { transform: rotate(300deg) translate(70px) rotate(90deg) translate(-50%, -50%); }
+    button {
+      border: 0;
+      border-radius: 6px;
+      background: var(--button);
+      color: #f9f6f2;
+      cursor: pointer;
+      font: inherit;
+      font-weight: 700;
+      min-height: 42px;
+      padding: 8px 10px;
+    }
 
-    .game-message {
-      display: none;
-      position: absolute;
-      top: 0;
-      right: 0;
-      bottom: 0;
-      left: 0;
-      background: rgba(238, 228, 218, 0.5);
-      z-index: 100;
+    button:hover { filter: brightness(1.05); }
+
+    .board-wrap {
+      position: relative;
+      width: min(94vw, 620px);
+      aspect-ratio: 1;
+      margin: 0 auto;
+      touch-action: none;
+    }
+
+    svg { width: 100%; height: 100%; display: block; }
+
+    .cell-path {
+      stroke: #bbada0;
+      stroke-width: 4;
+      transition: fill 120ms ease;
+    }
+
+    .tile-label {
+      pointer-events: none;
+      fill: #776e65;
+      font-weight: 800;
+      text-anchor: middle;
+      dominant-baseline: middle;
+      font-size: 22px;
+    }
+
+    .seam-line {
+      stroke: #3d372f;
+      stroke-width: 4;
+      stroke-linecap: round;
+      opacity: 0.65;
+      pointer-events: none;
+    }
+
+    .seam-handle {
+      fill: #3d372f;
+      stroke: #faf8ef;
+      stroke-width: 5;
+      cursor: grab;
+    }
+
+    .message {
+      min-height: 30px;
+      margin-top: 12px;
+      color: var(--ink);
+      font-weight: 700;
       text-align: center;
     }
 
-    .game-message p {
-      font-size: 60px;
-      font-weight: bold;
-      height: 60px;
-      line-height: 60px;
-      margin-top: 222px;
+    .hint {
+      margin: 10px auto 0;
+      max-width: 560px;
+      text-align: center;
+      font-size: 15px;
+      line-height: 1.35;
     }
 
-    .game-message .lower {
-      display: block;
-      margin-top: 59px;
-    }
-
-    .game-message a {
-      display: inline-block;
-      background: #8f7a66;
-      border-radius: 3px;
-      padding: 0 20px;
-      text-decoration: none;
-      color: #f9f6f2;
-      height: 40px;
-      line-height: 42px;
-      margin-left: 9px;
-    }
-
-    .game-message .keep-playing-button {
-      display: none;
-    }
-
-    .undo-button {
-      background: #8f7a66;
-      border-radius: 3px;
-      padding: 0 20px;
-      text-decoration: none;
-      color: #f9f6f2;
-      height: 40px;
-      line-height: 42px;
-      display: inline-block;
-      margin-left: 10px;
-    }
-
-    .tile.tile-2048 {
-      background: #edc22e;
-      color: #f9f6f2;
-      font-size: 35px;
+    @media (max-width: 540px) {
+      .topbar { align-items: stretch; flex-direction: column; }
+      .scores { justify-content: space-between; }
+      .controls { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .tile-label { font-size: 18px; }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>2048</h1>
-    <div class="heading">
-      <div class="scores-container">
-        <div class="score-container">0</div>
-        <div class="best-container">0</div>
-      </div>
-      <a class="restart-button">New Game</a>
-      <a class="undo-button">Undo</a>
-    </div>
-    <div class="game-container">
-      <div class="grid-container">
-        <div class="grid-row">
-          <div class="grid-cell"></div>
-          <div class="grid-cell"></div>
-          <div class="grid-cell"></div>
-          <div class="grid-cell"></div>
-        </div>
-        <div class="grid-row">
-          <div class="grid-cell"></div>
-          <div class="grid-cell"></div>
-          <div class="grid-cell"></div>
-          <div class="grid-cell"></div>
-        </div>
-        <div class="grid-row">
-          <div class="grid-cell"></div>
-          <div class="grid-cell"></div>
-          <div class="grid-cell"></div>
-          <div class="grid-cell"></div>
-        </div>
-        <div class="grid-row">
-          <div class="grid-cell"></div>
-          <div class="grid-cell"></div>
-          <div class="grid-cell"></div>
-          <div class="grid-cell"></div>
-        </div>
-      </div>
-      <div class="tile-container"></div>
-    </div>
-    <div class="game-message">
-      <p></p>
-      <div class="lower">
-	      <a class="keep-playing-button">Keep going</a>
-        <a class="retry-button">Try again</a>
+  <main class="app">
+    <div class="topbar">
+      <h1>Rotundus 2048</h1>
+      <div class="scores">
+        <div class="score-box"><span>Score</span><strong id="score">0</strong></div>
+        <div class="score-box"><span>Best</span><strong id="best">0</strong></div>
       </div>
     </div>
-    <div class="spinning-wheel-container">
-      <div class="wheel-layer layer-1">
-        <div class="marker"></div>
-        <div class="label" id="label-A">A</div>
-        <div class="label" id="label-B">B</div>
-        <div class="label" id="label-C">C</div>
-        <div class="label" id="label-D">D</div>
-        <div class="label" id="label-E">E</div>
-        <div class="label" id="label-F">F</div>
-        <div class="label" id="label-G">G</div>
-      </div>
-      <div class="wheel-layer layer-2">
-        <div class="marker"></div>
-        <div class="label" id="label-H">H</div>
-        <div class="label" id="label-I">I</div>
-        <div class="label" id="label-J">J</div>
-        <div class="label" id="label-K">K</div>
-        <div class="label" id="label-L">L</div>
-      </div>
-      <div class="wheel-layer layer-3">
-        <div class="marker"></div>
-        <div class="label" id="label-M">M</div>
-        <div class="label" id="label-N">N</div>
-        <div class="label" id="label-O">O</div>
-      </div>
-      <div class="wheel-layer layer-4 center-circle" id="label-P"></div>
+
+    <div class="controls" aria-label="Game controls">
+      <button id="counterButton" type="button">Counterclockwise</button>
+      <button id="clockButton" type="button">Clockwise</button>
+      <button id="undoButton" type="button">Undo</button>
+      <button id="newButton" type="button">New Game</button>
     </div>
-  </div>
+
+    <section class="board-wrap" id="boardWrap" aria-label="Rotundus 2048 board">
+      <svg id="board" viewBox="0 0 600 600" role="img" aria-label="Round 2048 board"></svg>
+    </section>
+
+    <div class="message" id="message"></div>
+    <p class="hint">Drag the center handle to move the cut line. Use Left/Right or A/D for counterclockwise and clockwise moves.</p>
+  </main>
+
   <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      const WHEEL_GRID_MAP = {
-        A: [0, 2], B: [0, 3], C: [1, 3], D: [2, 3], E: [3, 3], F: [0, 0], G: [0, 1],
-        H: [1, 1], I: [1, 2], J: [2, 2], K: [3, 2], L: [1, 0],
-        M: [2, 1], N: [3, 1], O: [2, 0],
-        P: [3, 0]
+    (() => {
+      const size = 4;
+      const center = 300;
+      const outerRadius = 280;
+      const innerRadius = 34;
+      const ringWidth = (outerRadius - innerRadius) / size;
+      const board = document.getElementById('board');
+      const boardWrap = document.getElementById('boardWrap');
+      const scoreEl = document.getElementById('score');
+      const bestEl = document.getElementById('best');
+      const messageEl = document.getElementById('message');
+      const colors = {
+        0: ['#cdc1b4', '#776e65'],
+        2: ['#eee4da', '#776e65'],
+        4: ['#ede0c8', '#776e65'],
+        8: ['#f2b179', '#f9f6f2'],
+        16: ['#f59563', '#f9f6f2'],
+        32: ['#f67c5f', '#f9f6f2'],
+        64: ['#f65e3b', '#f9f6f2'],
+        128: ['#edcf72', '#f9f6f2'],
+        256: ['#edcc61', '#f9f6f2'],
+        512: ['#edc850', '#f9f6f2'],
+        1024: ['#edc53f', '#f9f6f2'],
+        2048: ['#edc22e', '#f9f6f2']
       };
 
-      const TILE_COLORS = {
-        2: { background: '#eee4da', color: '#776e65' },
-        4: { background: '#ede0c8', color: '#776e65' },
-        8: { background: '#f2b179', color: '#f9f6f2' },
-        16: { background: '#f59563', color: '#f9f6f2' },
-        32: { background: '#f67c5f', color: '#f9f6f2' },
-        64: { background: '#f65e3b', color: '#f9f6f2' },
-        128: { background: '#edcf72', color: '#f9f6f2' },
-        256: { background: '#edcc61', color: '#f9f6f2' },
-        512: { background: '#edc850', color: '#f9f6f2' },
-        1024: { background: '#edc53f', color: '#f9f6f2' },
-        2048: { background: '#edc22e', color: '#f9f6f2' }
-      };
-
-      const tileContainer = document.querySelector(".tile-container");
+      const rings = buildRings();
+      let grid = emptyGrid();
       let score = 0;
-      let bestScore = 0;
-      let grid = [];
-      let previousGrid = [];
-      let previousScore = 0;
+      let best = Number(localStorage.getItem('rotundusBest') || 0);
+      let seamAngle = -135;
+      let previous = null;
+      let draggingSeam = false;
+      let swipeStart = null;
 
-      // Initialize grid
-      function initializeGrid() {
-        const gameMessage = document.querySelector(".game-message");
-        gameMessage.style.display = "none";
-        for (let i = 0; i < 4; i++) {
-          grid[i] = [];
-          for (let j = 0; j < 4; j++) {
-            grid[i][j] = 0;
+      function emptyGrid() {
+        return Array.from({ length: size }, () => Array(size).fill(0));
+      }
+
+      function buildRings() {
+        const output = [];
+        for (let radius = 0; radius < size; radius += 1) {
+          const ring = [];
+          for (let y = radius; y >= 0; y -= 1) ring.push([size - 1 - y, radius]);
+          for (let x = radius - 1; x >= 0; x -= 1) ring.push([size - 1 - radius, x]);
+          output.push(ring);
+        }
+        return output;
+      }
+
+      function cloneGrid(source) {
+        return source.map((row) => row.slice());
+      }
+
+      function polarPoint(radius, angleDegrees) {
+        const radians = (angleDegrees - 90) * Math.PI / 180;
+        return [center + radius * Math.cos(radians), center + radius * Math.sin(radians)];
+      }
+
+      function describeArc(inner, outer, startAngle, endAngle) {
+        const largeArc = endAngle - startAngle > 180 ? 1 : 0;
+        const outerStart = polarPoint(outer, startAngle);
+        const outerEnd = polarPoint(outer, endAngle);
+        const innerEnd = polarPoint(inner, endAngle);
+        const innerStart = polarPoint(inner, startAngle);
+        return [
+          `M ${outerStart[0]} ${outerStart[1]}`,
+          `A ${outer} ${outer} 0 ${largeArc} 1 ${outerEnd[0]} ${outerEnd[1]}`,
+          `L ${innerEnd[0]} ${innerEnd[1]}`,
+          `A ${inner} ${inner} 0 ${largeArc} 0 ${innerStart[0]} ${innerStart[1]}`,
+          'Z'
+        ].join(' ');
+      }
+
+      function lineValues(cells) {
+        return cells.map(([row, col]) => grid[row][col]);
+      }
+
+      function writeLine(cells, values) {
+        cells.forEach(([row, col], index) => {
+          grid[row][col] = values[index];
+        });
+      }
+
+      function mergeLine(values) {
+        const packed = values.filter(Boolean);
+        const merged = [];
+        let gained = 0;
+        for (let i = 0; i < packed.length; i += 1) {
+          if (packed[i] === packed[i + 1]) {
+            const value = packed[i] * 2;
+            merged.push(value);
+            gained += value;
+            i += 1;
+          } else {
+            merged.push(packed[i]);
           }
         }
-        score = 0;
-        bestScore = localStorage.getItem("bestScore") || 0;
-        updateScore();
+        while (merged.length < values.length) merged.push(0);
+        return { values: merged, gained };
+      }
+
+      function rotatedRing(ring) {
+        if (ring.length === 1) return ring;
+        const normalized = ((seamAngle % 360) + 360) % 360;
+        const offset = Math.round((normalized / 360) * ring.length) % ring.length;
+        return ring.slice(offset).concat(ring.slice(0, offset));
+      }
+
+      function moveAround(clockwise) {
+        const before = JSON.stringify(grid);
+        previous = { grid: cloneGrid(grid), score };
+        let gained = 0;
+        rings.forEach((ring) => {
+          const cells = rotatedRing(ring);
+          const ordered = clockwise ? cells.slice().reverse() : cells;
+          const result = mergeLine(lineValues(ordered));
+          gained += result.gained;
+          writeLine(ordered, result.values);
+        });
+        if (JSON.stringify(grid) === before) {
+          previous = null;
+          return false;
+        }
+        score += gained;
         addRandomTile();
-        addRandomTile();
-        updateGrid();
-      }
-
-      // Add a random tile (2 or 4) to an empty cell
-      function addRandomTile() {
-        let emptyCells = [];
-        for (let i = 0; i < 4; i++) {
-          for (let j = 0; j < 4; j++) {
-            if (grid[i][j] === 0) {
-              emptyCells.push({ x: i, y: j });
-            }
-          }
-        }
-        if (emptyCells.length > 0) {
-          const { x, y } = emptyCells[Math.floor(Math.random() * emptyCells.length)];
-          grid[x][y] = Math.random() < 0.9 ? 2 : 4;
-        }
-      }
-
-      // Update the grid UI
-      function updateGrid() {
-        tileContainer.innerHTML = "";
-        for (let i = 0; i < 4; i++) {
-          for (let j = 0; j < 4; j++) {
-            if (grid[i][j] !== 0) {
-              const tile = document.createElement("div");
-              tile.classList.add("tile", `tile-${grid[i][j]}`);
-              if (window.innerWidth <= 520) {
-                tile.style.top = `${(i * 25)}%`;
-                tile.style.left = `${(j * 25)}%`;
-              } else {
-                tile.style.top = `${5 + i * 121.25}px`;
-                tile.style.left = `${5 + j * 121.25}px`;
-              }
-              tile.textContent = grid[i][j];
-              tileContainer.appendChild(tile);
-            }
-          }
-        }
-        updateWheel();
-      }
-
-      function updateWheel() {
-        const layer1 = document.querySelector('.layer-1');
-        const layer2 = document.querySelector('.layer-2');
-        const layer3 = document.querySelector('.layer-3');
-        const centerCircle = document.querySelector('.center-circle');
-
-        const layer1Colors = {};
-        const layer2Colors = {};
-        const layer3Colors = {};
-
-        for (const segment in WHEEL_GRID_MAP) {
-            const [row, col] = WHEEL_GRID_MAP[segment];
-            const value = grid[row][col];
-            let color = '#bbada0';
-            let textColor = 'white';
-
-            if (value && TILE_COLORS[value]) {
-                color = TILE_COLORS[value].background;
-                textColor = TILE_COLORS[value].color;
-            }
-
-            const label = document.getElementById(`label-${segment}`);
-            if (label) {
-                if (value) {
-                    label.textContent = value;
-                    label.style.color = textColor;
-                } else {
-                    label.textContent = segment;
-                    label.style.color = 'white';
-                }
-            }
-
-            if (['A', 'B', 'C', 'D', 'E', 'F', 'G'].includes(segment)) {
-                layer1Colors[segment] = color;
-            } else if (['H', 'I', 'J', 'K', 'L'].includes(segment)) {
-                layer2Colors[segment] = color;
-            } else if (['M', 'N', 'O'].includes(segment)) {
-                layer3Colors[segment] = color;
-            } else if (segment === 'P') {
-                if (value) {
-                    centerCircle.style.backgroundColor = color;
-                    centerCircle.style.color = textColor;
-                    centerCircle.textContent = value;
-                } else {
-                    centerCircle.style.backgroundColor = '#bbada0';
-                    centerCircle.textContent = '';
-                }
-            }
-        }
-
-        const layer1Gradient = `conic-gradient(
-          ${layer1Colors['F']} 0deg 51.4deg, ${layer1Colors['G']} 51.4deg 102.8deg,
-          ${layer1Colors['A']} 102.8deg 154.2deg, ${layer1Colors['B']} 154.2deg 205.6deg,
-          ${layer1Colors['C']} 205.6deg 257deg, ${layer1Colors['D']} 257deg 308.4deg,
-          ${layer1Colors['E']} 308.4deg 360deg
-        )`;
-        layer1.style.background = layer1Gradient;
-
-        const layer2Gradient = `conic-gradient(
-          ${layer2Colors['L']} 0deg 72deg, ${layer2Colors['H']} 72deg 144deg,
-          ${layer2Colors['I']} 144deg 216deg, ${layer2Colors['J']} 216deg 288deg,
-          ${layer2Colors['K']} 288deg 360deg
-        )`;
-        layer2.style.background = layer2Gradient;
-
-        const layer3Gradient = `conic-gradient(
-          ${layer3Colors['O']} 0deg 120deg, ${layer3Colors['M']} 120deg 240deg,
-          ${layer3Colors['N']} 240deg 360deg
-        )`;
-        layer3.style.background = layer3Gradient;
-      }
-
-      // Update score
-      function updateScore() {
-        document.querySelector(".score-container").textContent = score;
-        if (score > bestScore) {
-          bestScore = score;
-          localStorage.setItem("bestScore", bestScore);
-        }
-        document.querySelector(".best-container").textContent = bestScore;
-      }
-
-      function saveState() {
-        previousGrid = JSON.parse(JSON.stringify(grid));
-        previousScore = score;
-      }
-
-      // Handle keydown events
-      document.addEventListener("keydown", (e) => {
-        let moved = false;
-        saveState();
-        switch (e.key) {
-          case "ArrowUp":
-            moved = moveUp();
-            break;
-          case "ArrowDown":
-            moved = moveDown();
-            break;
-          case "ArrowLeft":
-            moved = moveLeft();
-            break;
-          case "ArrowRight":
-            moved = moveRight();
-            break;
-        }
-        if (moved) {
-          addRandomTile();
-          updateGrid();
-          checkGameState();
-        } else {
-          previousGrid = [];
-          previousScore = 0;
-        }
-      });
-
-      // Check for win or game over
-      function checkGameState() {
-        let win = false;
-        for (let i = 0; i < 4; i++) {
-          for (let j = 0; j < 4; j++) {
-            if (grid[i][j] === 2048) {
-              win = true;
-              break;
-            }
-          }
-        }
-
-        if (win) {
-          const gameMessage = document.querySelector(".game-message");
-          gameMessage.querySelector("p").textContent = "You win!";
-          gameMessage.style.display = "block";
-          const keepPlayingButton = gameMessage.querySelector(".keep-playing-button");
-          keepPlayingButton.style.display = "inline-block";
-          keepPlayingButton.addEventListener("click", () => {
-            gameMessage.style.display = "none";
-          });
-        } else if (isGameOver()) {
-          const gameMessage = document.querySelector(".game-message");
-          gameMessage.querySelector("p").textContent = "Game over!";
-          gameMessage.style.display = "block";
-          const retryButton = gameMessage.querySelector(".retry-button");
-          retryButton.addEventListener("click", initializeGrid);
-        }
-      }
-
-      // Check if the game is over
-      function isGameOver() {
-        for (let i = 0; i < 4; i++) {
-          for (let j = 0; j < 4; j++) {
-            if (grid[i][j] === 0) {
-              return false;
-            }
-            if (i < 3 && grid[i][j] === grid[i + 1][j]) {
-              return false;
-            }
-            if (j < 3 && grid[i][j] === grid[i][j + 1]) {
-              return false;
-            }
-          }
-        }
+        render();
+        checkGameState();
         return true;
       }
 
-      // Move tiles up
-      function moveUp() {
-        let moved = false;
-        for (let j = 0; j < 4; j++) {
-          let merged = [false, false, false, false];
-          for (let i = 1; i < 4; i++) {
-            if (grid[i][j] !== 0) {
-              let row = i;
-              while (row > 0 && grid[row - 1][j] === 0) {
-                grid[row - 1][j] = grid[row][j];
-                grid[row][j] = 0;
-                row--;
-                moved = true;
-              }
-              if (row > 0 && grid[row - 1][j] === grid[row][j] && !merged[row - 1]) {
-                grid[row - 1][j] *= 2;
-                score += grid[row - 1][j];
-                grid[row][j] = 0;
-                merged[row - 1] = true;
-                moved = true;
-                updateScore();
-              }
-            }
-          }
-        }
-        return moved;
+      function addRandomTile() {
+        const empty = [];
+        grid.forEach((row, rowIndex) => {
+          row.forEach((value, colIndex) => {
+            if (!value) empty.push([rowIndex, colIndex]);
+          });
+        });
+        if (!empty.length) return;
+        const [row, col] = empty[Math.floor(Math.random() * empty.length)];
+        grid[row][col] = Math.random() < 0.9 ? 2 : 4;
       }
 
-      // Move tiles down
-      function moveDown() {
-        let moved = false;
-        for (let j = 0; j < 4; j++) {
-          let merged = [false, false, false, false];
-          for (let i = 2; i >= 0; i--) {
-            if (grid[i][j] !== 0) {
-              let row = i;
-              while (row < 3 && grid[row + 1][j] === 0) {
-                grid[row + 1][j] = grid[row][j];
-                grid[row][j] = 0;
-                row++;
-                moved = true;
-              }
-              if (row < 3 && grid[row + 1][j] === grid[row][j] && !merged[row + 1]) {
-                grid[row + 1][j] *= 2;
-                score += grid[row + 1][j];
-                grid[row][j] = 0;
-                merged[row + 1] = true;
-                moved = true;
-                updateScore();
-              }
-            }
-          }
-        }
-        return moved;
+      function hasRoundMove() {
+        return rings.some((ring) => {
+          const cells = rotatedRing(ring);
+          const forward = lineValues(cells);
+          const backward = lineValues(cells.slice().reverse());
+          return JSON.stringify(mergeLine(forward).values) !== JSON.stringify(forward) ||
+            JSON.stringify(mergeLine(backward).values) !== JSON.stringify(backward);
+        });
       }
 
-      // Move tiles left
-      function moveLeft() {
-        let moved = false;
-        for (let i = 0; i < 4; i++) {
-          let merged = [false, false, false, false];
-          for (let j = 1; j < 4; j++) {
-            if (grid[i][j] !== 0) {
-              let col = j;
-              while (col > 0 && grid[i][col - 1] === 0) {
-                grid[i][col - 1] = grid[i][col];
-                grid[i][col] = 0;
-                col--;
-                moved = true;
-              }
-              if (col > 0 && grid[i][col - 1] === grid[i][col] && !merged[col - 1]) {
-                grid[i][col - 1] *= 2;
-                score += grid[i][col - 1];
-                grid[i][col] = 0;
-                merged[col - 1] = true;
-                moved = true;
-                updateScore();
-              }
-            }
-          }
+      function checkGameState() {
+        if (grid.some((row) => row.includes(2048))) {
+          messageEl.textContent = 'You made 2048. Keep spinning if you want.';
+        } else if (!grid.some((row) => row.includes(0)) && !hasRoundMove()) {
+          messageEl.textContent = 'Game over.';
+        } else {
+          messageEl.textContent = '';
         }
-        return moved;
       }
 
-      // Move tiles right
-      function moveRight() {
-        let moved = false;
-        for (let i = 0; i < 4; i++) {
-          let merged = [false, false, false, false];
-          for (let j = 2; j >= 0; j--) {
-            if (grid[i][j] !== 0) {
-              let col = j;
-              while (col < 3 && grid[i][col + 1] === 0) {
-                grid[i][col + 1] = grid[i][col];
-                grid[i][col] = 0;
-                col++;
-                moved = true;
-              }
-              if (col < 3 && grid[i][col + 1] === grid[i][col] && !merged[col + 1]) {
-                grid[i][col + 1] *= 2;
-                score += grid[i][col + 1];
-                grid[i][col] = 0;
-                merged[col + 1] = true;
-                moved = true;
-                updateScore();
-              }
-            }
-          }
+      function updateScore() {
+        scoreEl.textContent = score;
+        if (score > best) {
+          best = score;
+          localStorage.setItem('rotundusBest', String(best));
         }
-        return moved;
+        bestEl.textContent = best;
       }
 
-      const restartButton = document.querySelector(".restart-button");
-      restartButton.addEventListener("click", initializeGrid);
+      function render() {
+        board.innerHTML = '';
+        updateScore();
+        rings.forEach((ring, ringIndex) => {
+          const inner = ringIndex === 0 ? 0 : innerRadius + ringWidth * (ringIndex - 1);
+          const outer = innerRadius + ringWidth * ringIndex;
+          const segment = 360 / ring.length;
+          rotatedRing(ring).forEach(([row, col], index) => {
+            const start = seamAngle + index * segment;
+            const end = start + segment;
+            const value = grid[row][col];
+            const [fill, labelColor] = colors[value] || ['#3c3a32', '#f9f6f2'];
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('class', 'cell-path');
+            path.setAttribute('fill', fill);
+            path.setAttribute('d', ringIndex === 0 ? centerDiscPath(outer) : describeArc(inner, outer, start, end));
+            board.appendChild(path);
+            if (value) addLabel(value, labelColor, ringIndex, start + segment / 2, inner, outer);
+          });
+        });
+        drawSeam();
+      }
 
-      const undoButton = document.querySelector(".undo-button");
-      undoButton.addEventListener("click", undo);
+      function centerDiscPath(radius) {
+        return `M ${center - radius} ${center} a ${radius} ${radius} 0 1 0 ${radius * 2} 0 a ${radius} ${radius} 0 1 0 ${-radius * 2} 0`;
+      }
+
+      function addLabel(value, color, ringIndex, angle, inner, outer) {
+        const radius = ringIndex === 0 ? outer / 2 : (inner + outer) / 2;
+        const [x, y] = polarPoint(radius, angle);
+        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        text.setAttribute('class', 'tile-label');
+        text.setAttribute('x', x);
+        text.setAttribute('y', y);
+        text.setAttribute('fill', color);
+        text.textContent = value;
+        board.appendChild(text);
+      }
+
+      function drawSeam() {
+        const start = polarPoint(12, seamAngle);
+        const end = polarPoint(outerRadius + 8, seamAngle);
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('class', 'seam-line');
+        line.setAttribute('x1', start[0]);
+        line.setAttribute('y1', start[1]);
+        line.setAttribute('x2', end[0]);
+        line.setAttribute('y2', end[1]);
+        board.appendChild(line);
+
+        const handle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        handle.setAttribute('class', 'seam-handle');
+        handle.setAttribute('cx', end[0]);
+        handle.setAttribute('cy', end[1]);
+        handle.setAttribute('r', 15);
+        board.appendChild(handle);
+      }
+
+      function angleFromEvent(event) {
+        const rect = board.getBoundingClientRect();
+        const x = ((event.clientX - rect.left) / rect.width) * 600 - center;
+        const y = ((event.clientY - rect.top) / rect.height) * 600 - center;
+        return Math.atan2(y, x) * 180 / Math.PI + 90;
+      }
+
+      function newGame() {
+        grid = emptyGrid();
+        score = 0;
+        previous = null;
+        messageEl.textContent = '';
+        addRandomTile();
+        addRandomTile();
+        render();
+      }
 
       function undo() {
-        if (previousGrid.length > 0) {
-          grid = JSON.parse(JSON.stringify(previousGrid));
-          score = previousScore;
-          updateGrid();
-          updateScore();
+        if (!previous) return;
+        grid = cloneGrid(previous.grid);
+        score = previous.score;
+        previous = null;
+        messageEl.textContent = '';
+        render();
+      }
+
+      function pointerDown(event) {
+        const angle = angleFromEvent(event);
+        const distance = Math.hypot(event.offsetX - board.clientWidth / 2, event.offsetY - board.clientHeight / 2);
+        swipeStart = { x: event.clientX, y: event.clientY };
+        draggingSeam = distance > board.clientWidth * 0.38;
+        if (draggingSeam) {
+          seamAngle = angle;
+          render();
         }
       }
 
-      let touchStartX = 0;
-      let touchStartY = 0;
-      let touchEndX = 0;
-      let touchEndY = 0;
-
-      const gameContainer = document.querySelector('.game-container');
-
-      gameContainer.addEventListener('touchstart', (event) => {
-          touchStartX = event.changedTouches[0].screenX;
-          touchStartY = event.changedTouches[0].screenY;
-      }, false);
-
-      gameContainer.addEventListener('touchmove', (event) => {
-          event.preventDefault();
-      }, { passive: false });
-
-      gameContainer.addEventListener('touchend', (event) => {
-          touchEndX = event.changedTouches[0].screenX;
-          touchEndY = event.changedTouches[0].screenY;
-          handleSwipe();
-      }, false); 
-
-      function handleSwipe() {
-          const deltaX = touchEndX - touchStartX;
-          const deltaY = touchEndY - touchStartY;
-          const minSwipeDistance = 30;
-          let moved = false;
-
-          saveState();
-
-          if (Math.abs(deltaX) > Math.abs(deltaY)) {
-            if (Math.abs(deltaX) < minSwipeDistance) return;
-              if (deltaX > 0) {
-                  moved = moveRight();
-              } else {
-                  moved = moveLeft();
-              }
-          } else {
-            if (Math.abs(deltaY) < minSwipeDistance) return;
-              if (deltaY > 0) {
-                  moved = moveDown();
-              } else {
-                  moved = moveUp();
-              }
-          }
-
-          if (moved) {
-              addRandomTile();
-              updateGrid();
-              checkGameState();
-          } else {
-            previousGrid = [];
-            previousScore = 0;
-          }
+      function pointerMove(event) {
+        if (!draggingSeam) return;
+        seamAngle = angleFromEvent(event);
+        render();
       }
 
-      initializeGrid();
-
-      const wheel = document.querySelector('.spinning-wheel-container');
-      let currentRotation = [0, 0, 0, 0];
-      let spinTouchStartX = 0;
-      let spinTouchStartY = 0;
-
-      wheel.addEventListener('touchstart', (event) => {
-        spinTouchStartX = event.changedTouches[0].clientX;
-        spinTouchStartY = event.changedTouches[0].clientY;
-        event.stopPropagation();
-      }, false);
-
-      wheel.addEventListener('touchmove', (event) => {
-        event.preventDefault();
-      }, { passive: false });
-
-      wheel.addEventListener('touchend', (event) => {
-        const spinTouchEndX = event.changedTouches[0].clientX;
-        const spinTouchEndY = event.changedTouches[0].clientY;
-        handleWheelSwipe(event.target, spinTouchStartX, spinTouchStartY, spinTouchEndX, spinTouchEndY);
-        event.stopPropagation();
-      }, false);
-
-      function handleWheelSwipe(target, startX, startY, endX, endY) {
-        const deltaX = endX - startX;
-        const deltaY = endY - startY;
-
-        if (Math.sqrt(deltaX * deltaX + deltaY * deltaY) < 50) return; // Ignore small swipes
-
-        let layer = target;
-        while (layer && !layer.classList.contains('wheel-layer')) {
-          layer = layer.parentElement;
+      function pointerUp(event) {
+        if (draggingSeam) {
+          draggingSeam = false;
+          return;
         }
-
-        if (layer) {
-          const layerIndex = parseInt(layer.classList[1].split('-')[1]) - 1;
-          if (layerIndex >= 0 && layerIndex < 3) { // Only allow spinning for layers 1, 2, and 3
-            const wheelBounds = wheel.getBoundingClientRect();
-            const wheelCenterX = wheelBounds.left + wheelBounds.width / 2;
-            const wheelCenterY = wheelBounds.top + wheelBounds.height / 2;
-
-            const startVec = { x: startX - wheelCenterX, y: startY - wheelCenterY };
-            const endVec = { x: endX - wheelCenterX, y: endY - wheelCenterY };
-
-            const crossProduct = startVec.x * endVec.y - startVec.y * endVec.x;
-
-            let direction = 0;
-            if (crossProduct > 0) {
-              direction = 1; // Clockwise
-            } else if (crossProduct < 0) {
-              direction = -1; // Counter-clockwise
-            }
-
-            const snapAngles = [360/7, 360/5, 120];
-            currentRotation[layerIndex] += snapAngles[layerIndex] * direction;
-            layer.style.transform = `rotate(${currentRotation[layerIndex]}deg)`;
-          }
-        }
+        if (!swipeStart) return;
+        const dx = event.clientX - swipeStart.x;
+        const dy = event.clientY - swipeStart.y;
+        if (Math.hypot(dx, dy) < 35) return;
+        const rect = boardWrap.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        const startAngle = Math.atan2(swipeStart.y - centerY, swipeStart.x - centerX);
+        const endAngle = Math.atan2(event.clientY - centerY, event.clientX - centerX);
+        moveAround(endAngle > startAngle);
       }
-    });
+
+      document.getElementById('counterButton').addEventListener('click', () => moveAround(false));
+      document.getElementById('clockButton').addEventListener('click', () => moveAround(true));
+      document.getElementById('undoButton').addEventListener('click', undo);
+      document.getElementById('newButton').addEventListener('click', newGame);
+      boardWrap.addEventListener('pointerdown', pointerDown);
+      boardWrap.addEventListener('pointermove', pointerMove);
+      boardWrap.addEventListener('pointerup', pointerUp);
+      boardWrap.addEventListener('pointercancel', () => { draggingSeam = false; swipeStart = null; });
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'ArrowLeft' || event.key.toLowerCase() === 'a') moveAround(false);
+        if (event.key === 'ArrowRight' || event.key.toLowerCase() === 'd') moveAround(true);
+        if (event.key.toLowerCase() === 'u') undo();
+        if (event.key.toLowerCase() === 'n') newGame();
+      });
+
+      newGame();
+    })();
   </script>
 </body>
 </html>
